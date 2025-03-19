@@ -1,42 +1,38 @@
-import { Container } from "@mui/material";
+import { Container, Box } from "@mui/material";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Provider } from 'react-redux';
 import Header from "./components/Header"; 
 import Menu from "./components/Menu";
 import Content from "./components/Content";
 import Footer from "./components/Footer";
+import Dashboard from "./components/Dashboard";
 import labsData from "./data/labs.json";
-import { createRoot } from 'react-dom/client';
+import { ThemeProvider } from './ThemeContext';
+import store from './store';
 
-// Функция для получения выбранной лабораторной работы из хэша URL
-function getSelectedLab() {
-  const hash = location.hash;
-  const labId = hash ? parseInt(hash.replace('#lab', '')) : null;
-  return labId ? labsData.labs.find(lab => lab.id === labId) : null;
-}
-
-// Функция для рендеринга приложения
-function renderApp() {
-  const root = createRoot(document.getElementById('root'));
-  const selectedLab = getSelectedLab();
-  
-  root.render(
-    <div className="app">
-      <Header />
-      <Container sx={{ display: 'flex', minHeight: 'calc(100vh - 130px)' }}>
-        <Menu labs={labsData.labs} />
-        <Content selectedLab={selectedLab} />
-      </Container>
-      <Footer />
-    </div>
-  );
-}
-
-// Инициализация приложения
 function App() {
-  // При первом рендере добавляем обработчик события hashchange
-  window.addEventListener('hashchange', renderApp);
-  renderApp(); 
-  
-  return null;
+  return (
+    <Provider store={store}>
+      <ThemeProvider>
+        <Router>
+          <div className="app">
+            <Header />
+            <Container sx={{ display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 130px)' }}>
+              <Dashboard />
+              <Box sx={{ display: 'flex', flex: 1 }}>
+                <Menu labs={labsData.labs} />
+                <Routes>
+                  <Route path="/" element={<Content />} />
+                  <Route path="/lab/:id" element={<Content />} />
+                </Routes>
+              </Box>
+            </Container>
+            <Footer />
+          </div>
+        </Router>
+      </ThemeProvider>
+    </Provider>
+  );
 }
 
 export default App;

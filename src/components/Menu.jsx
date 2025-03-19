@@ -1,4 +1,5 @@
 import { List, ListItem, ListItemButton, ListItemText, Paper } from '@mui/material';
+import { Link } from 'react-router-dom';
 
 function Menu({ labs }) {
   return (
@@ -6,7 +7,7 @@ function Menu({ labs }) {
       <List>
         {labs.map((lab) => (
           <ListItem key={lab.id} disablePadding>
-            <ListItemButton href={`#lab${lab.id}`}>
+            <ListItemButton component={Link} to={`/lab/${lab.id}`}>
               <ListItemText primary={lab.title} />
             </ListItemButton>
           </ListItem>
