@@ -1,4 +1,5 @@
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, Typography, useTheme, Link as MuiLink } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 
 function Footer() {
   const theme = useTheme();
@@ -13,9 +14,40 @@ function Footer() {
         marginTop: 'auto'
       }}
     >
-      <Typography align="center">
-        Галенко Михаил, 4.209-1
-      </Typography>
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          width: '100%'
+        }}
+      >
+        {/* Пустой блок для баланса */}
+        <Box sx={{ flex: 1 }}></Box>
+        
+        {/* Центральный блок с ссылкой */}
+        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+          <MuiLink 
+            component={RouterLink} 
+            to="/feedback" 
+            color="primary" 
+            sx={{ 
+              textDecoration: 'none', 
+              '&:hover': { textDecoration: 'underline' },
+              fontSize: '1rem'
+            }}
+          >
+            Обратная связь
+          </MuiLink>
+        </Box>
+        
+        {/* Правый блок с текстом */}
+        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+          <Typography>
+            Галенко Михаил, 4.209-1
+          </Typography>
+        </Box>
+      </Box>
     </Box>
   );
 }

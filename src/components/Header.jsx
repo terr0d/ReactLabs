@@ -1,12 +1,29 @@
-import { AppBar, Toolbar, Typography, IconButton } from '@mui/material';
+import { AppBar, Toolbar, Typography, IconButton, Box, Button, Avatar, Menu, MenuItem } from '@mui/material';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
-import { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { useContext, useState } from 'react';
 import { ThemeContext } from '../ThemeContext';
+import useLoginState from '../hooks/useLoginState';
+import { Link } from 'react-router-dom';
 
-function Header() {
+function Header({ isLoggedIn, onLogout }) {
   const { isDarkMode, toggleTheme } = useContext(ThemeContext);
+  const { getUserData } = useLoginState();
+  const [anchorEl, setAnchorEl] = useState(null);
+  const userData = getUserData();
+  
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+  
+  const handleLogout = () => {
+    handleMenuClose();
+    onLogout();
+  };
   
   return (
     <AppBar position="static">
@@ -17,6 +34,34 @@ function Header() {
         <IconButton color="inherit" onClick={toggleTheme}>
           {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
         </IconButton>
+        
+        {isLoggedIn && (
+          <Box sx={{ ml: 2 }}>
+            <IconButton 
+              onClick={handleMenuOpen}
+              size="small"
+              sx={{ ml: 2 }}
+              aria-controls="profile-menu"
+              aria-haspopup="true"
+            >
+              <Avatar sx={{ width: 32, height: 32 }}>
+                {userData?.name ? userData.name[0].toUpperCase() : 'U'}
+              </Avatar>
+            </IconButton>
+            <Menu
+              id="profile-menu"
+              anchorEl={anchorEl}
+              keepMounted
+              open={Boolean(anchorEl)}
+              onClose={handleMenuClose}
+            >
+              <MenuItem disabled>
+                {userData?.email}
+              </MenuItem>
+              <MenuItem onClick={handleLogout}>Выйти</MenuItem>
+            </Menu>
+          </Box>
+        )}
       </Toolbar>
     </AppBar>
   );
