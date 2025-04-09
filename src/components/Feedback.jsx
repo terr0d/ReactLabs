@@ -1,23 +1,19 @@
 import { useEffect } from "react";
-import { Box, Typography, Container, CircularProgress, Alert } from "@mui/material";
+import { Box, Typography, Container, Alert } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchFeedbacks } from "../store/feedbackSlice";
+import { feedbackApi } from "../store/feedbackApi"
 import FeedbackForm from "./FeedbackForm";
 import FeedbackList from "./FeedbackList";
 
 function Feedback() {
   const dispatch = useDispatch();
-  const { feedbacks, loading, error, success } = useSelector(state => state.feedback);
-
-  // Загружаем отзывы при монтировании компонента
-  useEffect(() => {
-    dispatch(fetchFeedbacks());
-  }, [dispatch]);
+  const { loading, error, success } = useSelector(state => state.feedback);
 
   // Обновляем список отзывов после успешного создания нового
   useEffect(() => {
     if (success) {
-      dispatch(fetchFeedbacks());
+      // Инвалидируем кэш rtk-query для обновления списка отзывов
+      dispatch(feedbackApi.util.invalidateTags(['Feedback']));
     }
   }, [success, dispatch]);
 
@@ -35,14 +31,7 @@ function Feedback() {
         )}
         
         <FeedbackForm />
-        
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <FeedbackList feedbacks={feedbacks} />
-        )}
+        <FeedbackList />
       </Box>
     </Container>
   );
