@@ -12,6 +12,7 @@ import LoginForm from "./components/LoginForm";
 import RegisterForm from "./components/RegisterForm";
 import Feedback from "./components/Feedback";
 import ProfileEdit from "./components/ProfileEdit";
+import AdminLayout from "./components/Admin/AdminLayout";
 import labsData from "./data/labs.json";
 import { ThemeProvider } from './ThemeContext';
 import store from './store/index.js';
@@ -56,6 +57,9 @@ function AppContent() {
     setMenuOpen(prev => !prev);
   }, []);
   
+  // Проверка, является ли пользователь администратором
+  const isAdmin = user?.role === 'admin';
+  
   return (
     <Router>
       <div className="app" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -64,6 +68,7 @@ function AppContent() {
           onLogout={handleLogout} 
           toggleMenu={toggleMenu}
           menuOpen={menuOpen}
+          isAdmin={isAdmin}
         />
         
         <Box sx={{ 
@@ -80,6 +85,7 @@ function AppContent() {
               labs={labsData.labs} 
               open={menuOpen} 
               setOpen={setMenuOpen} 
+              isAdmin={isAdmin}
             />
           )}
           
@@ -96,6 +102,7 @@ function AppContent() {
                 <Route path="/lab/:id" element={<Content />} />
                 <Route path="/feedback" element={<Feedback />} />
                 <Route path="/profile" element={<ProfileEdit />} />
+                {isAdmin && <Route path="/admin/*" element={<AdminLayout />} />}
               </Routes>
             ) : (
               showLoginForm ? (

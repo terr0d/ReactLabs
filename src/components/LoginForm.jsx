@@ -17,7 +17,17 @@ function LoginForm({ onSwitchToRegister }) {
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   
   const dispatch = useDispatch();
-  const { loading, error } = useSelector(state => state.auth);
+  const { loading, error, user } = useSelector(state => state.auth);
+  
+  // Проверка блокировки при монтировании компонента
+  useEffect(() => {
+    // Если пользователь авторизован и заблокирован - выполняем выход
+    if (user && user.is_blocked) {
+      dispatch(logoutUser());
+      // Отображаем сообщение о блокировке
+      setError('Ваш аккаунт заблокирован. Пожалуйста, обратитесь к администратору.');
+    }
+  }, [user, dispatch]);
 
   const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm({
     resolver: yupResolver(schema),

@@ -7,6 +7,7 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { useContext, useState } from 'react';
 import { ThemeContext } from '../ThemeContext';
 import { Link } from 'react-router-dom';
@@ -19,6 +20,7 @@ function Header({ isLoggedIn, onLogout, toggleMenu, menuOpen }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isExtraSmall = useMediaQuery('(max-width:480px)');
+  const isAdmin = user?.role === 'admin'; // Проверка на роль админа
   
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -109,6 +111,20 @@ function Header({ isLoggedIn, onLogout, toggleMenu, menuOpen }) {
             </Tooltip>
           )}
           
+          {/* Добавляем кнопку админки, если пользователь - админ */}
+          {isLoggedIn && isAdmin && (
+            <Tooltip title="Панель администратора">
+              <IconButton 
+                component={Link} 
+                to="/admin" 
+                color="inherit"
+                size={isExtraSmall ? "medium" : "large"}
+              >
+                <AdminPanelSettingsIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          
           <Tooltip title={isDarkMode ? "Светлая тема" : "Темная тема"}>
             <IconButton 
               color="inherit" 
@@ -145,6 +161,12 @@ function Header({ isLoggedIn, onLogout, toggleMenu, menuOpen }) {
                   <AccountCircleIcon fontSize="small" sx={{ mr: 1 }} />
                   Редактировать профиль
                 </MenuItem>
+                {isAdmin && (
+                  <MenuItem component={Link} to="/admin" onClick={handleMenuClose}>
+                    <AdminPanelSettingsIcon fontSize="small" sx={{ mr: 1 }} />
+                    Панель администратора
+                  </MenuItem>
+                )}
                 {isMobile && (
                   <>
                     <MenuItem component={Link} to="/" onClick={handleMenuClose}>

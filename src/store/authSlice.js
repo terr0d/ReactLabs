@@ -10,15 +10,20 @@ export const loginUser = createAsyncThunk(
     try {
       const response = await axios.post(`${API_URL}/users/auth`, credentials);
       
+      // Проверяем статус пользователя
+      if (response.data.is_blocked) {
+        return rejectWithValue('Ваш аккаунт заблокирован. Пожалуйста, обратитесь к администратору.');
+      }
+      
       // Создаем объект пользователя с данными из запроса
       const userData = {
         email: credentials.email,
-        password: credentials.password, // Сохраняем пароль для авторизации запросов
+        password: credentials.password,
         role: response.data.user_role,
+        is_blocked: response.data.is_blocked,
         // Остальные поля будут заполнены при получении профиля
       };
       
-      // Сохраняем данные пользователя в localStorage
       localStorage.setItem('user', JSON.stringify(userData));
       return userData;
     } catch (error) {
@@ -53,12 +58,19 @@ export const registerUser = createAsyncThunk(
 // Получение полного профиля пользователя
 export const fetchUserProfile = createAsyncThunk(
   'auth/fetchProfile',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { getState, rejectWithValue, dispatch }) => {
     try {
       const { user } = getState().auth;
       if (!user || !user.email) return rejectWithValue('Not authenticated');
       
       const response = await axios.get(`${API_URL}/users/profile/${user.email}`);
+      
+      // Проверяем, не заблокирован ли пользователь
+      if (response.data.is_blocked) {
+        // Если пользователь заблокирован, выполняем выход
+        dispatch(logoutUser());
+        return rejectWithValue('Ваш аккаунт заблокирован. Пожалуйста, обратитесь к администратору.');
+      }
       
       // Обновляем данные пользователя с полученными данными профиля
       const updatedUserData = {
@@ -66,9 +78,7 @@ export const fetchUserProfile = createAsyncThunk(
         ...response.data
       };
       
-      // Обновляем localStorage
       localStorage.setItem('user', JSON.stringify(updatedUserData));
-      
       return updatedUserData;
     } catch (error) {
       return rejectWithValue(error.response?.data?.detail || 'Ошибка получения профиля');

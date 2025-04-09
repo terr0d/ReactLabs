@@ -29,7 +29,6 @@ export const createFeedback = createAsyncThunk(
       
       const response = await axios.post(`${API_URL}/feedback/`, feedbackData);
       
-      // После успешного создания отзыва обновляем весь список отзывов
       dispatch(fetchFeedbacks());
       
       // Возвращаем данные нового отзыва для обработки в состоянии
@@ -71,6 +70,40 @@ export const deleteFeedback = createAsyncThunk(
       if (error.response) {
         if (error.response.status === 403) {
           errorMessage = 'У вас нет прав для удаления этого отзыва';
+        } else if (error.response.data?.detail) {
+          errorMessage = error.response.data.detail;
+        }
+      }
+      
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+// Блокировка отзыва
+export const blockFeedback = createAsyncThunk(
+  'feedback/block',
+  async (feedbackId, { rejectWithValue, getState }) => {
+    try {
+      const { auth } = getState();
+      if (!auth.user || !auth.user.email) {
+        return rejectWithValue('Необходима авторизация');
+      }
+      
+      const credentials = {
+        email: auth.user.email,
+        password: auth.user.password || ""
+      };
+      
+      await axios.put(`${API_URL}/feedback/block/${feedbackId}`, credentials);
+      
+      return feedbackId;
+    } catch (error) {
+      let errorMessage = 'Ошибка блокировки отзыва';
+      
+      if (error.response) {
+        if (error.response.status === 403) {
+          errorMessage = 'У вас нет прав для блокировки этого отзыва';
         } else if (error.response.data?.detail) {
           errorMessage = error.response.data.detail;
         }
@@ -138,6 +171,23 @@ const feedbackSlice = createSlice({
         state.feedbacks = state.feedbacks.filter(feedback => feedback.id !== action.payload);
       })
       .addCase(deleteFeedback.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Обработка блокировки отзыва
+      .addCase(blockFeedback.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(blockFeedback.fulfilled, (state, action) => {
+        state.loading = false;
+        state.feedbacks = state.feedbacks.map(feedback => 
+          feedback.id === action.payload 
+            ? { ...feedback, is_blocked: true } 
+            : feedback
+        );
+      })
+      .addCase(blockFeedback.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
