@@ -2,18 +2,22 @@ import { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { Box, TextField, Button, Typography, Paper, Checkbox, FormControlLabel, Alert, Snackbar } from "@mui/material";
+import { Box, TextField, Button, Typography, Paper, Checkbox, FormControlLabel, Alert, Snackbar, CircularProgress } from "@mui/material";
 import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser } from "../store/authSlice";
 
 const schema = yup.object({
   email: yup.string().email("Некорректный email").required("Email обязателен"),
   password: yup.string().required("Пароль обязателен").min(6, "Пароль должен содержать минимум 6 символов"),
 });
 
-function LoginForm({ onSubmit, onSwitchToRegister }) {
+function LoginForm({ onSwitchToRegister }) {
   const [rememberMe, setRememberMe] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  const [showErrorAlert, setShowErrorAlert] = useState(false);
+  
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector(state => state.auth);
 
   const { register, handleSubmit, formState: { errors }, setValue, reset } = useForm({
     resolver: yupResolver(schema),
@@ -42,7 +46,7 @@ function LoginForm({ onSubmit, onSwitchToRegister }) {
   }, [reset]);
 
   // Обработка отправки формы
-  const processSubmit = useCallback((data) => {
+  const processSubmit = useCallback(async (data) => {
     // Сохранение данных в localStorage, если включен rememberMe
     if (rememberMe) {
       localStorage.setItem('userCredentials', JSON.stringify({
@@ -54,20 +58,27 @@ function LoginForm({ onSubmit, onSwitchToRegister }) {
       localStorage.removeItem('userCredentials');
     }
 
-    if (data.email === "admin@example.com" && data.password === "admin123") {
+    // Отправка запроса на авторизацию через Redux
+    const resultAction = await dispatch(loginUser(data));
+    
+    // Если авторизация успешна, показываем уведомление
+    if (loginUser.fulfilled.match(resultAction)) {
       setShowSuccessAlert(true);
-      // Вызываем onSubmit только при успешной авторизации
-      onSubmit(data);
-    } else {
-      setShowErrorAlert(true);
     }
-  }, [onSubmit, rememberMe]);
+  }, [dispatch, rememberMe]);
 
   return (
     <Paper elevation={3} sx={{ p: 4, maxWidth: 400, mx: "auto", mt: 4 }}>
       <Typography variant="h5" component="h2" gutterBottom>
         Вход в систему
       </Typography>
+      
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {typeof error === 'object' ? error.detail : (typeof error === 'string' ? error : 'Неверный email или пароль')}
+        </Alert>
+      )}
+      
       <Box component="form" onSubmit={handleSubmit(processSubmit)} noValidate>
         <TextField
           margin="normal"
@@ -99,26 +110,28 @@ function LoginForm({ onSubmit, onSwitchToRegister }) {
           <Button
             variant="outlined"
             onClick={handleClearForm}
+            disabled={loading}
           >
             Очистить
           </Button>
           <Button
             type="submit"
             variant="contained"
+            disabled={loading}
           >
-            Войти
+            {loading ? <CircularProgress size={24} /> : 'Войти'}
           </Button>
         </Box>
         <Button
           fullWidth
           variant="text"
           onClick={onSwitchToRegister}
+          disabled={loading}
         >
           Нет аккаунта? Зарегистрироваться
         </Button>
       </Box>
 
-      {/* Уведомления */}
       <Snackbar 
         open={showSuccessAlert} 
         autoHideDuration={3000} 
@@ -126,15 +139,6 @@ function LoginForm({ onSubmit, onSwitchToRegister }) {
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert severity="success">Авторизация успешна!</Alert>
-      </Snackbar>
-
-      <Snackbar 
-        open={showErrorAlert} 
-        autoHideDuration={3000} 
-        onClose={() => setShowErrorAlert(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert severity="error">Неверный email или пароль</Alert>
       </Snackbar>
     </Paper>
   );

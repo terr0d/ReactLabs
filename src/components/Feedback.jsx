@@ -1,23 +1,25 @@
-import { useState, useCallback } from "react";
-import { Box, Typography, Container } from "@mui/material";
+import { useEffect } from "react";
+import { Box, Typography, Container, CircularProgress, Alert } from "@mui/material";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchFeedbacks } from "../store/feedbackSlice";
 import FeedbackForm from "./FeedbackForm";
 import FeedbackList from "./FeedbackList";
 
 function Feedback() {
-  const [feedbacks, setFeedbacks] = useState(() => {
-    // Получаем отзывы из localStorage при инициализации
-    const savedFeedbacks = localStorage.getItem('feedbacks');
-    return savedFeedbacks ? JSON.parse(savedFeedbacks) : [];
-  });
+  const dispatch = useDispatch();
+  const { feedbacks, loading, error, success } = useSelector(state => state.feedback);
 
-  const handleSubmitFeedback = useCallback((newFeedback) => {
-    setFeedbacks(prevFeedbacks => {
-      const updatedFeedbacks = [newFeedback, ...prevFeedbacks];
-      // Сохраняем отзывы в localStorage
-      localStorage.setItem('feedbacks', JSON.stringify(updatedFeedbacks));
-      return updatedFeedbacks;
-    });
-  }, []);
+  // Загружаем отзывы при монтировании компонента
+  useEffect(() => {
+    dispatch(fetchFeedbacks());
+  }, [dispatch]);
+
+  // Обновляем список отзывов после успешного создания нового
+  useEffect(() => {
+    if (success) {
+      dispatch(fetchFeedbacks());
+    }
+  }, [success, dispatch]);
 
   return (
     <Container maxWidth="md">
@@ -25,8 +27,22 @@ function Feedback() {
         <Typography variant="h4" component="h1" align="center" gutterBottom>
           Обратная связь
         </Typography>
-        <FeedbackForm onSubmit={handleSubmitFeedback} />
-        <FeedbackList feedbacks={feedbacks} />
+        
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {typeof error === 'string' ? error : 'Ошибка при загрузке отзывов'}
+          </Alert>
+        )}
+        
+        <FeedbackForm />
+        
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <FeedbackList feedbacks={feedbacks} />
+        )}
       </Box>
     </Container>
   );

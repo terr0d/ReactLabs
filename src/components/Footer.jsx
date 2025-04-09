@@ -1,8 +1,12 @@
-import { Box, Typography, useTheme, Link as MuiLink } from '@mui/material';
+import { Box, Typography, useTheme, IconButton, Tooltip, useMediaQuery } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
+import FeedbackIcon from '@mui/icons-material/Feedback';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import EmailIcon from '@mui/icons-material/Email';
 
-function Footer() {
+function Footer({ sx = {} }) {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   return (
     <Box 
@@ -11,7 +15,8 @@ function Footer() {
         padding: 2, 
         backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#f5f5f5',
         color: theme.palette.text.primary,
-        marginTop: 'auto'
+        width: '100%',
+        ...sx
       }}
     >
       <Box 
@@ -19,31 +24,62 @@ function Footer() {
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          width: '100%'
+          width: '100%',
+          flexDirection: isMobile ? 'column' : 'row'
         }}
       >
-        {/* Пустой блок для баланса */}
-        <Box sx={{ flex: 1 }}></Box>
-        
-        {/* Центральный блок с ссылкой */}
-        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-          <MuiLink 
-            component={RouterLink} 
-            to="/feedback" 
-            color="primary" 
-            sx={{ 
-              textDecoration: 'none', 
-              '&:hover': { textDecoration: 'underline' },
-              fontSize: '1rem'
-            }}
-          >
-            Обратная связь
-          </MuiLink>
+        <Box sx={{ flex: 1, mb: isMobile ? 1 : 0 }}>
+          <Typography variant="body2">
+            © 2025, Лабораторные работы
+          </Typography>
         </Box>
         
-        {/* Правый блок с текстом */}
+        <Box 
+          sx={{ 
+            flex: 1, 
+            display: 'flex', 
+            justifyContent: 'center',
+            gap: 2,
+            mb: isMobile ? 1 : 0
+          }}
+        >
+          <Tooltip title="Обратная связь">
+            <IconButton 
+              component={RouterLink} 
+              to="/feedback" 
+              color="primary"
+              size="small"
+            >
+              <FeedbackIcon />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="GitHub">
+            <IconButton 
+              component="a" 
+              href="https://github.com/terr0d/ReactLabs" 
+              target="_blank"
+              color="primary"
+              size="small"
+            >
+              <GitHubIcon />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Написать email">
+            <IconButton 
+              component="a" 
+              href="mailto:terrod29@gmail.com"
+              color="primary"
+              size="small"
+            >
+              <EmailIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+        
         <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
-          <Typography>
+          <Typography variant="body2">
             Галенко Михаил, 4.209-1
           </Typography>
         </Box>

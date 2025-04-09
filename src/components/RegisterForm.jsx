@@ -2,10 +2,12 @@ import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { Box, TextField, Button, Typography, Paper } from "@mui/material";
+import { Box, TextField, Button, Typography, Paper, CircularProgress, Alert } from "@mui/material";
+import { useDispatch, useSelector } from "react-redux";
+import { registerUser } from "../store/authSlice";
 
 const schema = yup.object({
-  name: yup.string().required("Имя обязательно"),
+  username: yup.string().required("Имя обязательно"),
   email: yup.string().email("Некорректный email").required("Email обязателен"),
   password: yup.string().required("Пароль обязателен").min(6, "Пароль должен содержать минимум 6 символов"),
   confirmPassword: yup.string()
@@ -13,34 +15,46 @@ const schema = yup.object({
     .required("Подтверждение пароля обязательно")
 });
 
-function RegisterForm({ onSubmit, onSwitchToLogin }) {
+function RegisterForm({ onSwitchToLogin }) {
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector(state => state.auth);
+
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      name: "",
+      username: "",
       email: "",
       password: "",
       confirmPassword: ""
     }
   });
 
-  const processSubmit = useCallback((data) => {
-    onSubmit(data);
-  }, [onSubmit]);
+  const processSubmit = useCallback(async (data) => {
+    const { confirmPassword, ...registerData } = data;
+    
+    await dispatch(registerUser(registerData));
+  }, [dispatch]);
 
   return (
     <Paper elevation={3} sx={{ p: 4, maxWidth: 400, mx: "auto", mt: 4 }}>
       <Typography variant="h5" component="h2" gutterBottom>
         Регистрация
       </Typography>
+      
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {typeof error === 'object' ? error.detail : (typeof error === 'string' ? error : 'Ошибка регистрации')}
+        </Alert>
+      )}
+      
       <Box component="form" onSubmit={handleSubmit(processSubmit)} noValidate>
         <TextField
           margin="normal"
           fullWidth
-          label="Имя"
-          {...register("name")}
-          error={!!errors.name}
-          helperText={errors.name?.message}
+          label="Имя пользователя"
+          {...register("username")}
+          error={!!errors.username}
+          helperText={errors.username?.message}
         />
         <TextField
           margin="normal"
@@ -73,13 +87,15 @@ function RegisterForm({ onSubmit, onSwitchToLogin }) {
           fullWidth
           variant="contained"
           sx={{ mt: 3, mb: 2 }}
+          disabled={loading}
         >
-          Зарегистрироваться
+          {loading ? <CircularProgress size={24} /> : 'Зарегистрироваться'}
         </Button>
         <Button
           fullWidth
           variant="text"
           onClick={onSwitchToLogin}
+          disabled={loading}
         >
           Уже есть аккаунт? Войти
         </Button>

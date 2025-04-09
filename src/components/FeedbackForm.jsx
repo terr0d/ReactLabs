@@ -1,57 +1,61 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { Box, TextField, Button, Typography, Paper, Rating } from "@mui/material";
+import { Box, TextField, Button, Typography, Paper, CircularProgress, Alert, Snackbar } from "@mui/material";
+import { useDispatch, useSelector } from "react-redux";
+import { createFeedback, clearStatus } from "../store/feedbackSlice";
 
 const schema = yup.object({
-  name: yup.string().required("Имя обязательно"),
-  email: yup.string().email("Некорректный email").required("Email обязателен"),
-  message: yup.string().required("Сообщение обязательно").min(10, "Сообщение должно содержать минимум 10 символов"),
-  rating: yup.number().min(1, "Оценка обязательна").max(5)
+  message: yup.string().required("Сообщение обязательно").min(10, "Сообщение должно содержать минимум 10 символов")
 });
 
-function FeedbackForm({ onSubmit }) {
-  const [rating, setRating] = useState(0);
+function FeedbackForm() {
+  const dispatch = useDispatch();
+  const { loading, error, success } = useSelector(state => state.feedback);
+  const { user } = useSelector(state => state.auth);
   
   const { register, handleSubmit, formState: { errors }, reset } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      name: "",
-      email: "",
-      message: "",
-      rating: 0
+      message: ""
     }
   });
 
-  const processSubmit = useCallback((data) => {
-    onSubmit({...data, date: new Date().toISOString()});
-    reset();
-    setRating(0);
-  }, [onSubmit, reset]);
+  const processSubmit = useCallback(async (data) => {
+    // Берем данные пользователя из профиля
+    const feedbackData = {
+      name: user?.username || "",
+      email: user?.email || "",
+      message: data.message,
+      user_id: user?.id
+    };
+    
+    await dispatch(createFeedback(feedbackData));
+    
+    // Сбрасываем форму только при успешном создании отзыва
+    if (!error) {
+      reset();
+    }
+  }, [dispatch, user, reset, error]);
+
+  const handleCloseSnackbar = () => {
+    dispatch(clearStatus());
+  };
 
   return (
     <Paper elevation={3} sx={{ p: 4, maxWidth: 600, mx: "auto", mt: 4 }}>
       <Typography variant="h5" component="h2" gutterBottom>
         Оставить отзыв
       </Typography>
+      
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {typeof error === 'string' ? error : 'Ошибка при отправке отзыва'}
+        </Alert>
+      )}
+      
       <Box component="form" onSubmit={handleSubmit(processSubmit)} noValidate>
-        <TextField
-          margin="normal"
-          fullWidth
-          label="Имя"
-          {...register("name")}
-          error={!!errors.name}
-          helperText={errors.name?.message}
-        />
-        <TextField
-          margin="normal"
-          fullWidth
-          label="Email"
-          {...register("email")}
-          error={!!errors.email}
-          helperText={errors.email?.message}
-        />
         <TextField
           margin="normal"
           fullWidth
@@ -62,31 +66,25 @@ function FeedbackForm({ onSubmit }) {
           error={!!errors.message}
           helperText={errors.message?.message}
         />
-        <Box sx={{ mt: 2 }}>
-          <Typography component="legend">Оценка</Typography>
-          <Rating
-            name="rating"
-            value={rating}
-            onChange={(event, newValue) => {
-              setRating(newValue);
-              register("rating").onChange({target: {value: newValue, name: "rating"}});
-            }}
-          />
-          {errors.rating && (
-            <Typography color="error" variant="caption">
-              {errors.rating.message}
-            </Typography>
-          )}
-        </Box>
         <Button
           type="submit"
           fullWidth
           variant="contained"
           sx={{ mt: 3, mb: 2 }}
+          disabled={loading}
         >
-          Отправить
+          {loading ? <CircularProgress size={24} /> : 'Отправить'}
         </Button>
       </Box>
+      
+      <Snackbar 
+        open={success} 
+        autoHideDuration={3000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="success">Отзыв успешно отправлен!</Alert>
+      </Snackbar>
     </Paper>
   );
 }
